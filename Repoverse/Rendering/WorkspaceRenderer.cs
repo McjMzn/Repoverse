@@ -10,19 +10,22 @@ namespace Repoverse.Rendering
 {
     public class WorkspaceRenderer : IRenderable
     {
+        private readonly Predicate<WorkspaceNode> isSelected;
         private Tree tree;
+
         public WorkspaceNode Workspace { get; set; }
 
-        public WorkspaceRenderer(WorkspaceNode node)
+        public WorkspaceRenderer(WorkspaceNode node, Predicate<WorkspaceNode> isSelected)
         {
             this.Workspace = node;
+            this.isSelected = isSelected;
         }
 
         private Tree CreateTree(WorkspaceNode workspace)
         {
             lock (Locks.WorkspaceLock)
             {
-                var tree = new Tree(new Markup($"[yellow]{workspace.Path}[/]"));
+                var tree = new Tree(new Markup($"[{ColorScheme.Default.RootNode}]{workspace.Path}[/]"));
                 AddTreeNodes(workspace, tree);
                 return tree;
             }
@@ -37,29 +40,16 @@ namespace Repoverse.Rendering
                     continue;
                 }
 
-                var color = workspaceNode.IsRepository ? "blue" : "default";
-                var branchIndicator = workspaceNode.IsRepository ? $"[cyan] ({workspaceNode.Repository.Head.FriendlyName})[/]" : string.Empty;
-                var isSelectedIndicator = workspaceNode.IsSelected ? $"> " : string.Empty;
+                var color = workspaceNode.IsRepository ? ColorScheme.Default.RepositoryNode : ColorScheme.Default.NonRepositoryNode;
+                var branchIndicator = workspaceNode.IsRepository ? $"[{ColorScheme.Default.RepositoryBranch}] ({workspaceNode.Repository.Head.FriendlyName})[/]" : string.Empty;
+                var isSelectedIndicator = this.isSelected(workspaceNode) ? $"> " : string.Empty;
                 var isActiveIndicator =
                     !workspaceNode.IsRepository ? string.Empty :
-                    workspaceNode.IsActive ? $"{isSelectedIndicator}[white]■ [/]" : $"{isSelectedIndicator}[grey]■ [/]";
+                    workspaceNode.IsActive ? $"{isSelectedIndicator}[{ColorScheme.Default.ActiveRepository}]■ [/]" : $"{isSelectedIndicator}[{ColorScheme.Default.InactiveRepository}]■ [/]";
 
                 var operationResultIndicator = this.GetResultIndicator(workspaceNode);
 
-                
-
-
                 var status = string.Empty;
-                //if (workspaceNode.RepositoryStatus is not null)
-                //{
-                //    var stagedCount = workspaceNode.RepositoryStatus.Count(f => workspaceNode.Repository.Index.Any(i => i.Path == f.FilePath));
-                //    var modifiedCount = workspaceNode.RepositoryStatus.Count() - stagedCount;
-
-                //    var modified = modifiedCount == 0 ? string.Empty : $" [yellow]~{modifiedCount}[/]";
-                //    var staged = stagedCount == 0 ? string.Empty : $" [teal]({stagedCount})[/]";
-
-                //    status = $"{modified}{staged}";
-                //}
 
                 var treeNode = new TreeNode(new Markup($"{isActiveIndicator}{operationResultIndicator}[{color}]{workspaceNode.Name}[/]{branchIndicator}{status}"));
 
@@ -88,7 +78,7 @@ namespace Repoverse.Rendering
 
             if (node.HasActiveProcess)
             {
-                color = "yellow";
+                color = ColorScheme.Default.ActiveProcess;
             }
             else if (lastResult is null)
             {
@@ -96,11 +86,11 @@ namespace Repoverse.Rendering
             }
             else if (lastResult.ExitCode == 0)
             {
-                color = node.HasRecentResult ? "lime" : "green4";
+                color = node.HasRecentResult ? ColorScheme.Default.RecentSuccessResult : ColorScheme.Default.SuccessResult;
             }
             else
             {
-                color = node.HasRecentResult ? "red" : "red3_1";
+                color = node.HasRecentResult ? ColorScheme.Default.RecentErrorResult : ColorScheme.Default.ErrorResult;
             }
 
             return $"[{color}]º [/]";

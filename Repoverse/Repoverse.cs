@@ -2,11 +2,16 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 
 namespace Repoverse
 {
     public class Repoverse
     {
+        private IShell repoverseShell;
+        private IShell workingDirectoryShell;
+        private IShell controlShell;
+
         private readonly string workingDirectory;
         private int selectedNodeIndex = 0;
         private int activeShellIndex = 0;
@@ -15,9 +20,8 @@ namespace Repoverse
         {
             this.workingDirectory = workingDirectory;
             this.Workspace = new WorkspaceNode(this.workingDirectory);
-            this.Workspace.RepositoryNodes[this.selectedNodeIndex].IsSelected = true;
 
-            var repoverseShell =
+            this.repoverseShell =
                 new AnsiShell(
                     () => "Repoverse>",
                     () => "[grey]Command will be executed in every active repository.[/]",
@@ -31,7 +35,7 @@ namespace Repoverse
                     }
                 );
 
-            var workingDirectoryShell =
+            this.workingDirectoryShell =
                 new AnsiShell
                 (
                     () => $"{this.workingDirectory}>",
@@ -39,26 +43,28 @@ namespace Repoverse
                     command => { }
                 );
             
-            var adminShell =
+            this.controlShell =
                 new SimpleShell
                 (
                     () => "",
-                    () => "",
+                    () => "[silver]<Up>/<Down>[/] to navigate, [silver]<Space>[/] to toggle, [silver]<O>[/] to show output",
                     key => this.ProcessTreeKeyPress(key)
                 );
 
-            this.Shells = new() { repoverseShell, workingDirectoryShell, adminShell };
+            this.Shells = new() { repoverseShell, workingDirectoryShell, controlShell };
         }
 
         public event EventHandler<IShell> ActiveShellChanged;
-
-        public event EventHandler<string> OutputMessageProduced;
+        
+        public event EventHandler<ProcessResult> ProcessResultProvided;
 
         public WorkspaceNode Workspace { get; }
 
         public List<IShell> Shells { get; }
 
         public IShell ActiveShell => this.Shells[this.activeShellIndex];
+
+        public WorkspaceNode SelectedNode => this.ActiveShell == this.controlShell ? this.Workspace.RepositoryNodes[this.selectedNodeIndex] : null;
 
         public void ProcessKeyPress(ConsoleKeyInfo key)
         {
@@ -88,14 +94,19 @@ namespace Repoverse
                     break;
 
                 case ConsoleKey.O:
-                    this.OutputMessageProduced?.Invoke(this, this.Workspace.RepositoryNodes[this.selectedNodeIndex].OperationResults.LastOrDefault()?.ProcessStandardOutput ?? string.Empty);
+                    var result = this.SelectedNode?.OperationResults?.LastOrDefault();
+                    if (result is null)
+                    {
+                        return;
+                    }
+
+                    this.ProcessResultProvided?.Invoke(this, result);
                     break;
             }
         }
         
         public void ChangeSelectionIndex(int offset)
         {
-            this.Workspace.RepositoryNodes[selectedNodeIndex].IsSelected = false;
             this.selectedNodeIndex += offset;
 
             if (selectedNodeIndex < 0)
@@ -107,8 +118,6 @@ namespace Repoverse
             {
                 selectedNodeIndex = 0;
             }
-            
-            this.Workspace.RepositoryNodes[selectedNodeIndex].IsSelected = true;
         }
 
         public void ChangeShell()

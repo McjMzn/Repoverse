@@ -39,7 +39,6 @@ namespace Repoverse
         public string Path { get; }
         public bool IsRepository { get; private set; }
         public bool IsActive { get; set; }
-        public bool IsSelected { get; set; }
         public Repository Repository { get; private set; }
         public RepositoryStatus RepositoryStatus { get; private set; }
         public List<ProcessResult> OperationResults { get; } = new List<ProcessResult>();
@@ -118,6 +117,11 @@ namespace Repoverse
 
             this.Nodes.AddRange(newNodes);
             this.updateInProgress = false;
+        }
+
+        public override string ToString()
+        {
+            return this.Path;
         }
     }
 }

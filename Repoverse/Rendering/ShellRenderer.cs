@@ -40,10 +40,10 @@ namespace Repoverse.Rendering
             switch (this.Shell)
             {
                 case IAnsiShell ansiShell:
-                    return new Markup($"[yellow]{ansiShell.Prompt} [/]{ansiShell.AnsiInput}");
+                    return new Markup($"[grey]{ansiShell.Help}[/]{Environment.NewLine}[yellow]{ansiShell.Prompt} [/]{ansiShell.AnsiInput}");
 
                 case IShell shell:
-                    return new Markup($"[yellow]{shell.Prompt} [/]");
+                    return new Markup($"[grey]{shell.Help}[/][yellow]{shell.Prompt} [/]");
 
                 default:
                     return new Markup(string.Empty);

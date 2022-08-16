@@ -1,7 +1,9 @@
 ﻿using Repoverse.Input;
 using Repoverse.Rendering;
 using Spectre.Console;
+using Spectre.Console.Rendering;
 using System;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -26,7 +28,7 @@ public class Program
             }
         }
     }
-    
+
     public class InteractiveLayoutRenderer : IDisposable
     {
         private RenderableHider mainLayoutHider;
@@ -35,13 +37,16 @@ public class Program
         private ShellRenderer shellRenderer;
 
         private ManualResetEvent resetEvent = new ManualResetEvent(true);
-        
+
         private Task liveTask;
         private bool running;
 
+        private readonly Repoverse repoverse;
+
         public InteractiveLayoutRenderer(Repoverse repoverse)
         {
-            this.workspaceRenderer = new WorkspaceRenderer(repoverse.Workspace);
+            this.repoverse = repoverse;
+            this.workspaceRenderer = new WorkspaceRenderer(repoverse.Workspace, node => repoverse.SelectedNode == node);
             this.shellRenderer = new ShellRenderer(repoverse.ActiveShell);
             repoverse.ActiveShellChanged += (sender, shell) =>
             {
@@ -49,23 +54,41 @@ public class Program
                 if (this.shellRenderer.Shell is SimpleShell)
                 {
                     // Allows scrolling up
-                    //Thread.Sleep(20);
-                    //this.Update();
+                    Thread.Sleep(50);
+                    this.Update();
                 }
                 else
                 {
-                    // this.resetEvent.Set();
+                    this.resetEvent.Set();
                 }
             };
-            
-            repoverse.OutputMessageProduced += (sender, message) => this.Write(message);
-            
+
+            repoverse.ProcessResultProvided += (sender, result) =>
+            {
+                var builder = new StringBuilder();
+
+                if (!string.IsNullOrWhiteSpace(result.ProcessStandardOutput))
+                {
+                    builder.AppendLine(result.ProcessStandardOutput);
+                }
+
+                if (!string.IsNullOrWhiteSpace(result.ProcessStandardError))
+                {
+                    builder.AppendLine($"[red]{result.ProcessStandardError}[/]");
+                }
+
+                var panel = new Panel(new Markup(builder.ToString())).Expand();
+                var b = panel.Border.GetPart(BoxBorderPart.Top);
+                panel.Header = new PanelHeader($"{b} [yellow]{result.WorkingDirectoryPath}>[/] [white]{result.Command}[/] {b}");
+
+                this.Write(panel);
+            };
+
             var repoOutputTable =
                 new Table()
                     .AddColumn(new TableColumn(workspaceRenderer))
-                    .AddColumn(new TableColumn("<OUTPUT>"))
                     .Expand();
-            
+
             this.mainLayout = new Table()
                 .NoBorder()
                 .HideHeaders()
@@ -76,13 +99,13 @@ public class Program
 
             this.mainLayoutHider = new RenderableHider(this.mainLayout);
         }
-        
+
         public void Update()
         {
             if (this.shellRenderer.Shell is SimpleShell)
             {
-               //this.resetEvent.Set();
-               //this.resetEvent.Reset();
+                this.resetEvent.Set();
+                this.resetEvent.Reset();
             }
         }
 
@@ -95,7 +118,7 @@ public class Program
 
             this.running = true;
             this.liveTask = Task.Run(() =>
-            {                
+            {
                 AnsiConsole.Live(this.mainLayoutHider).Start(context =>
                 {
                     while (this.running)
@@ -107,23 +130,24 @@ public class Program
                 });
             });
         }
-        
-        public void Write(string message)
+
+        public void Write(IRenderable renderable)
         {
             this.mainLayoutHider.IsHidden = true;
             this.Update();
-
             this.StopLive();
 
-            Console.WriteLine(message);
+            this.MoveCursorUp();
+
+            AnsiConsole.Write(renderable);
+            // AnsiConsole.MarkupLine(message);
 
             this.mainLayoutHider.IsHidden = false;
             this.StartLive();
-
             Thread.Sleep(50);
             this.Update();
         }
-        
+
         public void StopLive()
         {
             this.running = false;
@@ -134,6 +158,33 @@ public class Program
         {
             this.StopLive();
         }
+
+        private void MoveCursorUp()
+        {
+            // Border
+            Console.CursorTop--;
+            Console.CursorTop--;
+
+            // Legend
+            Console.CursorTop--;
+
+            // Nodes
+            Action<WorkspaceNode> moveUp = null;
+            moveUp = node =>
+            {
+                if (node.IsRepository || node.ContainRepositories)
+                {
+                    Console.CursorTop--;
+                }
+
+                foreach (var n in node.Nodes)
+                {
+                    moveUp(n);
+                }
+            };
+
+            moveUp(this.repoverse.Workspace);
+        }
     }
-    
+
 }

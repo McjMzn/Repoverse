@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
@@ -44,18 +45,27 @@ namespace Repoverse
                 RedirectStandardError = true,
             };
 
-            using var process = Process.Start(startInfo);
-            node.HasActiveProcess = true;
-            process.WaitForExit();
-
             var result = new ProcessResult
             {
                 Command = commandWithArguments,
-                ExitCode = process.ExitCode,
-                ProcessStandardOutput = process.StandardOutput.ReadToEnd(),
-                ProcessStandardError = process.StandardError.ReadToEnd(),
                 WorkingDirectoryPath = node.Path,
             };
+
+            try
+            {
+                using var process = Process.Start(startInfo);
+                node.HasActiveProcess = true;
+                process.WaitForExit();
+
+                result.ProcessStandardOutput = process.StandardOutput.ReadToEnd().Replace("\t", "    ").Trim();
+                result.ProcessStandardError = process.StandardError.ReadToEnd().Replace("\t", "    ").Trim();
+                result.ExitCode = process.ExitCode;
+            }
+            catch (Exception e)
+            {
+                result.ExitCode = -1;
+                result.ProcessStandardError = e.Message;
+            }
 
             node.OperationResults.Add(result);
             node.HasActiveProcess = false;

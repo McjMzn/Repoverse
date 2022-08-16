@@ -8,10 +8,10 @@ namespace Repoverse
 {
     public class ProcessResult
     {
-        public string WorkingDirectoryPath { get; init; }
-        public string Command { get; init; }
-        public int ExitCode { get; init; }
-        public string ProcessStandardOutput { get; init; }
-        public string ProcessStandardError { get; init; }
+        public string WorkingDirectoryPath { get; set; }
+        public string Command { get; set; }
+        public int ExitCode { get; set; }
+        public string ProcessStandardOutput { get; set; }
+        public string ProcessStandardError { get; set; }
     }
 }
