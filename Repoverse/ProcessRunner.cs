@@ -24,14 +24,8 @@ namespace Repoverse
             );
         }
         
-        private static void RunSingle(string commandWithArguments, WorkspaceNode node)
+        public static ProcessResult Run(string commandWithArguments, string workingDirectory)
         {
-            node.HasRecentResult = false;
-            if (!node.IsActive)
-            {
-                return;
-            }
-
             // TODO: Change to support quotes
             var spaceIndex = commandWithArguments.IndexOf(' ');
             var command = spaceIndex > 0 ? commandWithArguments.Substring(0, spaceIndex) : commandWithArguments;
@@ -40,7 +34,7 @@ namespace Repoverse
             var startInfo = new ProcessStartInfo(command)
             {
                 Arguments = args,
-                WorkingDirectory = node.Path,
+                WorkingDirectory = workingDirectory,
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
             };
@@ -48,14 +42,16 @@ namespace Repoverse
             var result = new ProcessResult
             {
                 Command = commandWithArguments,
-                WorkingDirectoryPath = node.Path,
+                WorkingDirectoryPath = workingDirectory,
             };
 
             try
             {
                 using var process = Process.Start(startInfo);
-                node.HasActiveProcess = true;
+                result.Started = DateTime.Now;
+                
                 process.WaitForExit();
+                result.Finished = DateTime.Now;
 
                 result.ProcessStandardOutput = process.StandardOutput.ReadToEnd().Replace("\t", "    ").Trim();
                 result.ProcessStandardError = process.StandardError.ReadToEnd().Replace("\t", "    ").Trim();
@@ -67,7 +63,20 @@ namespace Repoverse
                 result.ProcessStandardError = e.Message;
             }
 
-            node.OperationResults.Add(result);
+            return result;
+        }
+
+        private static void RunSingle(string commandWithArguments, WorkspaceNode node)
+        {
+            node.HasRecentResult = false;
+            if (!node.IsActive)
+            {
+                return;
+            }
+
+            node.HasActiveProcess = true;
+            var processResult = Run(commandWithArguments, node.Path);
+            node.OperationResults.Add(processResult);
             node.HasActiveProcess = false;
             node.HasRecentResult = true;
         }

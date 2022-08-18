@@ -8,63 +8,33 @@ namespace Repoverse
 {
     public class Repoverse
     {
-        private IShell repoverseShell;
-        private IShell workingDirectoryShell;
-        private IShell controlShell;
-
-        private readonly string workingDirectory;
+        public string WorkingDirectory { get; private set; }
         private int selectedNodeIndex = 0;
         private int activeShellIndex = 0;
-        
+
         public Repoverse(string workingDirectory)
         {
-            this.workingDirectory = workingDirectory;
-            this.Workspace = new WorkspaceNode(this.workingDirectory);
-
-            this.repoverseShell =
-                new AnsiShell(
-                    () => "Repoverse>",
-                    () => "[grey]Command will be executed in every active repository.[/]",
-                    command =>
-                    {
-                        ProcessRunner.Run(command, this.Workspace.RepositoryNodes, false);
-                        lock(Locks.WorkspaceLock)
-                        {
-                            this.Workspace.Update();
-                        }
-                    }
-                );
-
-            this.workingDirectoryShell =
-                new AnsiShell
-                (
-                    () => $"{this.workingDirectory}>",
-                    () => $"[grey]Command will be executed in working directory: [silver]{this.workingDirectory}[/][/]",
-                    command => { }
-                );
-            
-            this.controlShell =
-                new SimpleShell
-                (
-                    () => "",
-                    () => "[silver]<Up>/<Down>[/] to navigate, [silver]<Space>[/] to toggle, [silver]<O>[/] to show output",
-                    key => this.ProcessTreeKeyPress(key)
-                );
-
-            this.Shells = new() { repoverseShell, workingDirectoryShell, controlShell };
+            this.ChangeWorkingDirectory(workingDirectory);
         }
 
         public event EventHandler<IShell> ActiveShellChanged;
         
         public event EventHandler<ProcessResult> ProcessResultProvided;
 
-        public WorkspaceNode Workspace { get; }
+        public WorkspaceNode Workspace { get; private set; }
 
-        public List<IShell> Shells { get; }
+        public List<IShell> Shells { get; private set; }
 
         public IShell ActiveShell => this.Shells[this.activeShellIndex];
 
-        public WorkspaceNode SelectedNode => this.ActiveShell == this.controlShell ? this.Workspace.RepositoryNodes[this.selectedNodeIndex] : null;
+        public WorkspaceNode SelectedNode => this.ActiveShell is ControlShell ? this.Workspace.RepositoryNodes[this.selectedNodeIndex] : null;
+
+        public void ChangeWorkingDirectory(string workingDirectory)
+        {
+            this.WorkingDirectory = workingDirectory;
+            this.Workspace = new WorkspaceNode(this.WorkingDirectory);
+            this.Shells = new() { new RepoverseShell(this), new WorkingDirectoryShell(this), new ControlShell(this) };
+        }
 
         public void ProcessKeyPress(ConsoleKeyInfo key)
         {
@@ -77,7 +47,7 @@ namespace Repoverse
             this.ActiveShell.ProcessKeyPress(key);
         }
 
-        public void ProcessTreeKeyPress(ConsoleKeyInfo key)
+        public void ProcessControlKeyPress(ConsoleKeyInfo key)
         {
             switch (key.Key)
             {

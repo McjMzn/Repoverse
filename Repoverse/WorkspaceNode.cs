@@ -1,10 +1,7 @@
 ﻿using LibGit2Sharp;
-using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Repoverse
@@ -49,8 +46,6 @@ namespace Repoverse
         public bool HasActiveProcess { get; set; }
         public bool HasRecentResult { get; set; }
 
-        public event Action<WorkspaceNode> Changed;
-
         private List<WorkspaceNode> GetReposotoryNodes()
         {
             if (this.IsRepository)
@@ -94,7 +89,7 @@ namespace Repoverse
             {
                 this.IsRepository = true;
                 this.Repository = new Repository(repositoryPath);
-                // this.RepositoryStatus = this.IsRepository ? this.Repository.RetrieveStatus(new StatusOptions()) : null;
+                
                 return;
             }
 

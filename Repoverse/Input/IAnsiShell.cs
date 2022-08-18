@@ -8,6 +8,5 @@ namespace Repoverse.Input
         string AnsiInput { get; }
         
         List<string> CommandHistory { get; }
-        void ExecuteCommand();
     }
 }

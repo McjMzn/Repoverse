@@ -2,25 +2,17 @@
 
 namespace Repoverse.Input
 {
-    public class SimpleShell : IShell
+    public abstract class SimpleShell : IShell
     {
-        private readonly Func<string> getPrompt;
-        private readonly Func<string> getHelp;
-        private readonly Action<ConsoleKeyInfo> processKey;
-
-        public SimpleShell(Func<string> getPrompt, Func<string> getHelp, Action<ConsoleKeyInfo> processKey)
+        public SimpleShell()
         {
-            this.getPrompt = getPrompt;
-            this.getHelp = getHelp;
-            this.processKey = processKey;
         }
         
-        public string Prompt => this.getPrompt();
-        public string Help => this.getHelp();
+        public string Prompt => this.GetPrompt();
+        public string Help => this.GetHelp();
 
-        public void ProcessKeyPress(ConsoleKeyInfo key)
-        {
-            this.processKey(key);
-        }
+        public abstract string GetPrompt();
+        public abstract string GetHelp();
+        public abstract void ProcessKeyPress(ConsoleKeyInfo key);
     }
 }

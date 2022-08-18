@@ -13,5 +13,7 @@ namespace Repoverse
         public int ExitCode { get; set; }
         public string ProcessStandardOutput { get; set; }
         public string ProcessStandardError { get; set; }
+        public DateTime Started { get; set; }
+        public DateTime Finished { get; set; }
     }
 }
