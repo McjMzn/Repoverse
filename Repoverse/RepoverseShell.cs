@@ -13,7 +13,7 @@ namespace Repoverse
 
         public override void ExecuteCommand(string command)
         {
-            ProcessRunner.Run(command, repoverse.Workspace.RepositoryNodes, false);
+            ProcessRunner.Run(command, repoverse.Workspace.RepositoryNodes, true);
             lock (Locks.WorkspaceLock)
             {
                 repoverse.Workspace.Update();

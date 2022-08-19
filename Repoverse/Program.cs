@@ -20,7 +20,6 @@ public partial class Program
             renderer.StartLive();
 
             var isRunning = true;
-            Console.CancelKeyPress += (_, _) => isRunning = false;
             while (isRunning)
             {
                 var key = Console.ReadKey(true);

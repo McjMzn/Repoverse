@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -11,7 +12,7 @@ namespace Repoverse
     internal class SystemShell
     {
         private const string ProcessStartMagicString = "!@#START-OF-PROCESS#@!";
-        private const string GetExitCodeCommand = "echo %errorlevel%";
+        private readonly string GetExitCodeCommand = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "echo %errorlevel%" : "echo $?";
         private const string ProcessEndMagicString = "!@#END-OF-PROCESS#@!";
 
         private readonly Process shellProcess;
@@ -19,6 +20,8 @@ namespace Repoverse
         private readonly ManualResetEvent resetEvent = new ManualResetEvent(false);
 
         private int exitCode = 0;
+        private string workingDirectory = null;
+        private bool cacheWorkingDirectory = false;
 
         public SystemShell(string workingDirectory)
         {
@@ -35,16 +38,16 @@ namespace Repoverse
 
             this.shellProcess = Process.Start(startInfo);
             this.StartStandardOutputReading();
-            
         }
 
-        public string WorkingDirectory => this.ExecuteCommand("cd");
+        public string WorkingDirectory => this.cacheWorkingDirectory ? this.workingDirectory : this.ExecuteCommand("cd");
 
-        // TODO: Linux
         public int ExitCode => this.exitCode;
 
         public string ExecuteCommand(string command)
         {
+            this.cacheWorkingDirectory = false;
+
             this.shellProcess.StandardInput.Flush();
             this.shellProcess.StandardInput.WriteLine(ProcessStartMagicString);
             this.shellProcess.StandardInput.WriteLine($"{command}");
@@ -53,7 +56,14 @@ namespace Repoverse
             this.resetEvent.WaitOne();
             this.resetEvent.Reset();
 
-            return this.standardOutput.ToString().Trim();
+            var output = this.standardOutput.ToString().Trim();
+            if (command == "cd")
+            {
+                this.workingDirectory = output;
+                this.cacheWorkingDirectory = true;
+            }
+
+            return output;
         }
 
         private Task StartStandardOutputReading()
