@@ -1,0 +1,24 @@
+name: publish
+
+on:
+  push:
+    branches: [ master ]
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: '6.0.x'
+
+      - name: Publish
+        run: ./publish.bat
+
+      - name: Save artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: build
+          path: ./Repoverse/bin/publish
+      
