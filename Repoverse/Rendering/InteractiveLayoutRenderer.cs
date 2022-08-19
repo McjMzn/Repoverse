@@ -115,7 +115,8 @@ public class InteractiveLayoutRenderer
     private void OnActiveShellChanged(object sender, IShell shell)
     {
         this.shellRenderer.Shell = (sender as Repoverse).ActiveShell;
-     
+
+        Thread.Sleep(50);
         if (!this.UpdateIfInControlShell())
         {
             this.resetEvent.Set();

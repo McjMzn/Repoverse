@@ -70,11 +70,16 @@ namespace Repoverse
                         return;
                     }
 
-                    this.ProcessResultProvided?.Invoke(this, result);
+                    this.InvokeProcessResultProvided(result);
                     break;
             }
         }
         
+        public void InvokeProcessResultProvided(ProcessResult result)
+        {
+           this.ProcessResultProvided?.Invoke(this, result);
+        }
+
         public void ChangeSelectionIndex(int offset)
         {
             this.selectedNodeIndex += offset;
