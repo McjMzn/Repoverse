@@ -1,32 +1,43 @@
 ﻿using Repoverse.Input;
 using System;
+using System.Diagnostics;
 using System.IO;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Repoverse
 {
     public class WorkingDirectoryShell : AnsiShell
     {
         private readonly Repoverse repoverse;
-
+        private SystemShell systemShell;
+            
         public WorkingDirectoryShell(Repoverse repoverse)
         {
             this.repoverse = repoverse;
+            this.systemShell = new SystemShell(repoverse.WorkingDirectory);
         }
+
+        public event EventHandler<ProcessResult> ProcessResultProvided;
 
         public override void ExecuteCommand(string command)
         {
-            if (command.StartsWith("cd "))
+            var workdir = this.systemShell.WorkingDirectory;
+            var output = this.systemShell.ExecuteCommand(command);
+            var result = new ProcessResult
             {
-                var path = command.Substring(3);
-                var combined = Path.IsPathRooted(path) ? path : Path.Combine(this.repoverse.WorkingDirectory, path);
-                var fullCombined = Path.GetFullPath(combined);
+                Command = command,
+                ExitCode = this.systemShell.ExitCode,
+                ProcessStandardOutput = output,
+                WorkingDirectoryPath = workdir
+            };
 
-                repoverse.ChangeWorkingDirectory(fullCombined);
-                return;
-            }
-            else
+            this.repoverse.InvokeProcessResultProvided(result);
+
+            if (workdir != this.systemShell.WorkingDirectory)
             {
-                ProcessRunner.Run(command, repoverse.WorkingDirectory);
+                repoverse.ChangeWorkingDirectory(this.systemShell.WorkingDirectory);
             }
 
             lock (Locks.WorkspaceLock)
@@ -37,7 +48,7 @@ namespace Repoverse
 
         public override string GetHelp()
         {
-            return $"[grey]Command will be executed in working directory: [silver]{repoverse.WorkingDirectory}[/][/]";
+            return $"[grey]Command will be executed in the working directory.[/]";
         }
 
         public override string GetPrompt()

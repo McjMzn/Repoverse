@@ -15,6 +15,7 @@ namespace Repoverse
         public Repoverse(string workingDirectory)
         {
             this.ChangeWorkingDirectory(workingDirectory);
+            this.Shells = new() { new RepoverseShell(this), new WorkingDirectoryShell(this), new ControlShell(this) };
         }
 
         public event EventHandler<IShell> ActiveShellChanged;
@@ -33,7 +34,6 @@ namespace Repoverse
         {
             this.WorkingDirectory = workingDirectory;
             this.Workspace = new WorkspaceNode(this.WorkingDirectory);
-            this.Shells = new() { new RepoverseShell(this), new WorkingDirectoryShell(this), new ControlShell(this) };
         }
 
         public void ProcessKeyPress(ConsoleKeyInfo key)
