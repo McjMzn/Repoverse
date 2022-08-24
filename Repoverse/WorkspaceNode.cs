@@ -10,19 +10,12 @@ namespace Repoverse
     {
         private bool updateInProgress = false;
         
-        public WorkspaceNode(string path, int level = 1)
+        public WorkspaceNode(string path)
         {
             if (!Directory.Exists(path))
             {
                 throw new DirectoryNotFoundException($"Directory does not exis: {path}");
             }
-
-            if (this.Level > 2)
-            {
-                return;
-            }
-
-            this.Level = level;
 
             this.Path = path;
             var repositoryPath = Repository.Discover(path);
@@ -52,7 +45,6 @@ namespace Repoverse
         public bool ContainRepositories => this.Nodes.Any(n => n.IsRepository || n.ContainRepositories);
         public bool HasActiveProcess { get; set; }
         public bool HasRecentResult { get; set; }
-        public int Level { get; private set; }
 
         private List<WorkspaceNode> GetReposotoryNodes()
         {
@@ -71,8 +63,6 @@ namespace Repoverse
 
         private void LoadSubdirectories(WorkspaceNode parent)
         {
-
-
             var subdirectories = Directory.GetDirectories(parent.Path);
             if (subdirectories.Count() == 0)
             {
@@ -81,7 +71,7 @@ namespace Repoverse
 
             foreach (var subdirectory in subdirectories)
             {
-                var node = new WorkspaceNode(subdirectory, this.Level + 1);
+                var node = new WorkspaceNode(subdirectory);
                 parent.Nodes.Add(node);
             }
         }
@@ -118,7 +108,7 @@ namespace Repoverse
             var newNodes = subdirectories
                 .Where(subdirectoryPath => this.Nodes.All(node => node.Path != subdirectoryPath))
                 .ToList()
-                .Select(subdirectoryPath => new WorkspaceNode(subdirectoryPath, this.Level + 1));
+                .Select(subdirectoryPath => new WorkspaceNode(subdirectoryPath));
 
             this.Nodes.AddRange(newNodes);
             this.updateInProgress = false;

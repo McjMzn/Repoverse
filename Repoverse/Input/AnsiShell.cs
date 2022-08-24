@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Repoverse.Input
 {
     public abstract class AnsiShell : SimpleShell, IAnsiShell
     {
         private readonly AnsiShellInput input;
+        private int historyIndex = -1;
 
         public AnsiShell()
         {
@@ -21,9 +23,36 @@ namespace Repoverse.Input
         {
             switch(key.Key)
             {
+                case ConsoleKey.UpArrow:
+                    this.historyIndex =
+                            this.historyIndex == -1 ? this.CommandHistory.Count - 1 :
+                            this.historyIndex > 0 ? this.historyIndex - 1 :
+                            0;
+
+                    this.input.RawText = this.CommandHistory[this.historyIndex];
+
+                    break;
+
+                case ConsoleKey.DownArrow:
+                    if (this.historyIndex == this.CommandHistory.Count - 1)
+                    {
+                        this.historyIndex = -1;
+                    }
+
+                    if (this.historyIndex == -1)
+                    {
+                        this.CommandHistory.Last();
+                        break;
+                    }
+
+                    this.historyIndex++;
+                    this.input.RawText = this.CommandHistory[this.historyIndex];
+                    break;
+
                 case ConsoleKey.Enter:
                     this.ExecuteCommand(this.input.RawText);
                     this.CommandHistory.Add(this.input.RawText);
+                    this.historyIndex = -1;
                     this.ClearInput();
                     break;
 

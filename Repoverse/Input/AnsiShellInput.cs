@@ -20,6 +20,7 @@ namespace Repoverse
         private readonly string foregroundColor;
         private readonly string backgroundColor;
         private int cursorPosition;
+        private string rawText;
 
         public AnsiShellInput(string foregroundColor="silver", string backgroundColor="black")
         {
@@ -29,7 +30,15 @@ namespace Repoverse
             this.cursorPosition = 0;
         }
 
-        public string RawText { get; set; }
+        public string RawText
+        {
+            get => this.rawText;
+            set
+            {
+                this.rawText = value;
+                this.cursorPosition = this.rawText.Length;
+            }
+        }
 
         public string AnsiText
         {
@@ -45,9 +54,12 @@ namespace Repoverse
                 var postCursorText = this.RawText.Substring(this.cursorPosition + 1);
 
                 var mainStyle = $"{foregroundColor} on {backgroundColor}";
-                var altStyle = $"{backgroundColor} on {foregroundColor}";
+                var altStyle1 = $"black on silver";
+                var altStyle2 = $"black on grey66";
 
-                return $"[{mainStyle}]{preCursorText}[/][{altStyle}]{cursorChar}[/][{mainStyle}]{postCursorText}[/]";
+                return useAlternativeColor ?
+                    $"[{mainStyle}]{preCursorText}[/][{altStyle1}]{cursorChar}[/][{mainStyle}]{postCursorText}[/]" :
+                    $"[{mainStyle}]{preCursorText}[/][{altStyle2}]{cursorChar}[/][{mainStyle}]{postCursorText}[/]";
             }
         }
 
@@ -62,16 +74,20 @@ namespace Repoverse
             switch(keyInfo.Key)
             {
                 case ConsoleKey.Backspace:
-                    if (this.RawText.Length > 0)
+                    if (this.RawText.Length > 0 && cursorPosition > 0)
                     {
-                        this.RawText = this.RawText.Substring(0, this.RawText.Length - 1);
+                        this.rawText = this.rawText.Remove(this.cursorPosition - 1, 1);
                         this.cursorPosition--;
                     }
 
                     break;
 
                 case ConsoleKey.Delete:
-                    this.RawText = this.RawText.Substring(0, this.cursorPosition) + this.RawText.Substring(this.cursorPosition + 1);
+                    if (this.cursorPosition < this.rawText.Length)
+                    {
+                        this.rawText = this.rawText.Remove(this.cursorPosition, 1);
+                    }
+
                     break;
 
                 case ConsoleKey.LeftArrow:

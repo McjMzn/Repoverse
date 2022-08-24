@@ -1,4 +1,5 @@
 ﻿using Repoverse.Input;
+using Repoverse.OperatingSystem;
 using System;
 using System.Diagnostics;
 using System.IO;
@@ -11,33 +12,41 @@ namespace Repoverse
     public class WorkingDirectoryShell : AnsiShell
     {
         private readonly Repoverse repoverse;
-        private SystemShell systemShell;
+        private IOperatingSystemShell osShell;
             
         public WorkingDirectoryShell(Repoverse repoverse)
         {
             this.repoverse = repoverse;
-            this.systemShell = new SystemShell(repoverse.WorkingDirectory);
+            this.osShell = new WindowsCmd(repoverse.WorkingDirectory);
         }
 
         public event EventHandler<ProcessResult> ProcessResultProvided;
 
         public override void ExecuteCommand(string command)
         {
-            var workdir = this.systemShell.WorkingDirectory;
-            var output = this.systemShell.ExecuteCommand(command);
+            if (string.IsNullOrWhiteSpace(command))
+            {
+                return;
+            }
+
+            var startingWorkdir = this.osShell.ExecuteCommand("cd").Output;
+            var shellResult = this.osShell.ExecuteCommand(command);
+            var currentWorkdir = this.osShell.ExecuteCommand("cd").Output;
+
             var result = new ProcessResult
             {
                 Command = command,
-                ExitCode = this.systemShell.ExitCode,
-                ProcessStandardOutput = output,
-                WorkingDirectoryPath = workdir
+                ExitCode = shellResult.ExitCode,
+                ProcessStandardOutput = shellResult.ExitCode == 0 ? shellResult.Output : string.Empty,
+                ProcessStandardError = shellResult.ExitCode != 0 ? shellResult.Output : string.Empty,
+                WorkingDirectoryPath = startingWorkdir
             };
 
             this.repoverse.InvokeProcessResultProvided(result);
 
-            if (workdir != this.systemShell.WorkingDirectory)
+            if (startingWorkdir != currentWorkdir)
             {
-                repoverse.ChangeWorkingDirectory(this.systemShell.WorkingDirectory);
+                repoverse.ChangeWorkingDirectory(currentWorkdir);
             }
 
             lock (Locks.WorkspaceLock)

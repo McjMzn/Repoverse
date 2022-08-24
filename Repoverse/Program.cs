@@ -1,7 +1,6 @@
 ﻿using Spectre.Console;
 using System;
 using System.IO;
-using System.Reflection;
 using System.Text;
 
 namespace Repoverse;
@@ -32,7 +31,7 @@ public partial class Program
         }
         catch (Exception e)
         {
-
+            AnsiConsole.WriteException(e, ExceptionFormats.Default);
         }
     }
 
