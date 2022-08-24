@@ -52,7 +52,11 @@ namespace Repoverse.OperatingSystem
             if (command.StartsWith("cd "))
             {
                 var path = command.Substring("cd ".Length).Trim('"');
-                this.workingDirectory = Path.IsPathRooted(path) ? path : Path.GetFullPath(Path.Combine(this.workingDirectory, path));
+                var fullPath = Path.IsPathRooted(path) ? path : Path.GetFullPath(Path.Combine(this.workingDirectory, path));
+                if (Directory.Exists(fullPath))
+                {
+                    this.workingDirectory = fullPath;
+                }
             }
 
             process.StandardInput.WriteLine($"echo %errorlevel%");

@@ -35,9 +35,13 @@ namespace Repoverse.Rendering
         {
             foreach (var workspaceNode in workspace.Nodes)
             {
-                if (!workspaceNode.ContainRepositories && !workspaceNode.IsRepository)
+                var notRepository = !workspaceNode.IsRepository;
+                var containsNoRepository = !workspaceNode.ContainRepositories;
+                var nodeIsNeitherRootNorRepo = workspace != this.Workspace && !workspace.IsRepository;
+
+                if (notRepository && containsNoRepository && workspace.ContainRepositories)
                 {
-                    continue;
+                    // continue;
                 }
 
                 var color = workspaceNode.IsRepository ? ColorScheme.Default.RepositoryNode : ColorScheme.Default.NonRepositoryNode;
