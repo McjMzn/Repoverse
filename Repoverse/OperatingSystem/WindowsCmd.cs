@@ -135,7 +135,7 @@ namespace Repoverse.OperatingSystem
                     }
 
                     // Echo of working directory and command name.
-                    if (text.Contains(command) && text.Contains(workingDirectory))
+                    if (text.Contains(command) && text.Contains(workingDirectory, StringComparison.InvariantCultureIgnoreCase))
                     {
                         continue;
                     }
