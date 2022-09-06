@@ -1,4 +1,5 @@
 ﻿using LibGit2Sharp;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -11,6 +12,11 @@ namespace Repoverse
         private bool updateInProgress = false;
         
         public WorkspaceNode(string path)
+            : this(path, true)
+        {
+        }
+
+        private WorkspaceNode(string path, bool loadSubdirectories)
         {
             if (!Directory.Exists(path))
             {
@@ -25,9 +31,10 @@ namespace Repoverse
             if (this.IsRepository)
             {
                 Task.Run(() => this.RepositoryStatus = this.Repository.RetrieveStatus(new StatusOptions()));
+                this.IsSubdirectoryOfRepository = new Uri(this.Repository.Info.WorkingDirectory.Trim(System.IO.Path.DirectorySeparatorChar)).IsBaseOf(new Uri(this.Path.Trim(System.IO.Path.DirectorySeparatorChar)));
             }
 
-            if (!this.IsRepository)
+            if (!this.IsRepository && loadSubdirectories)
             {
                 this.LoadSubdirectories(this);
             }
@@ -35,6 +42,7 @@ namespace Repoverse
 
         public string Path { get; }
         public bool IsRepository { get; private set; }
+        public bool IsSubdirectoryOfRepository { get; private set; }
         public bool IsActive { get; set; }
         public Repository Repository { get; private set; }
         public RepositoryStatus RepositoryStatus { get; private set; }
@@ -69,9 +77,11 @@ namespace Repoverse
                 return;
             }
 
+            var containsRepo = Directory.GetDirectories(parent.Path).Select(path => Repository.Discover(path)).Count(p => p is not null) > 0;
+
             foreach (var subdirectory in subdirectories)
             {
-                var node = new WorkspaceNode(subdirectory);
+                var node = new WorkspaceNode(subdirectory, containsRepo);
                 parent.Nodes.Add(node);
             }
         }
