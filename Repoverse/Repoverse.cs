@@ -32,6 +32,7 @@ namespace Repoverse
 
         public void ChangeWorkingDirectory(string workingDirectory)
         {
+            this.selectedNodeIndex = 0;
             this.WorkingDirectory = workingDirectory;
             this.Workspace = new WorkspaceNode(this.WorkingDirectory);
         }

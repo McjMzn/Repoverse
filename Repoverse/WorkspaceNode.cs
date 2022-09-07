@@ -71,7 +71,17 @@ namespace Repoverse
 
         private void LoadSubdirectories(WorkspaceNode parent)
         {
-            var subdirectories = Directory.GetDirectories(parent.Path);
+            string[] subdirectories;
+
+            try
+            {
+                subdirectories = Directory.GetDirectories(parent.Path);
+            }
+            catch
+            {
+                return;
+            }
+
             if (subdirectories.Count() == 0)
             {
                 return;
@@ -92,14 +102,14 @@ namespace Repoverse
             {
                 return;
             }
-            
+
             this.updateInProgress = true;
             var repositoryPath = Repository.Discover(this.Path);
             if (repositoryPath is not null)
             {
                 this.IsRepository = true;
                 this.Repository = new Repository(repositoryPath);
-                
+
                 return;
             }
 
@@ -109,7 +119,14 @@ namespace Repoverse
                 .ToList()
                 .ForEach(node => this.Nodes.Remove(node));
 
-            var subdirectories = Directory.GetDirectories(this.Path);
+            var subdirectories = new string[] { };
+            try
+            {
+                subdirectories = Directory.GetDirectories(this.Path);
+            }
+            catch
+            {
+            }
 
             // Update active nodes.
             this.Nodes.ForEach(node => node.Update());

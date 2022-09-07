@@ -9,6 +9,14 @@ using System.Threading.Tasks;
 
 namespace Repoverse.Rendering
 {
+    public enum ChildrenRenderingMode
+    {
+        All,
+        AllIfNoRepositories,
+        JustRepositories,
+        None
+    }
+
     public class WorkspaceRenderer : IRenderable
     {
         private readonly Predicate<WorkspaceNode> isSelected;
@@ -52,19 +60,30 @@ namespace Repoverse.Rendering
                 var treeLabel = workspace.IsSubdirectoryOfRepository ? builder.ToString() : $"[{ColorScheme.Default.RootNode}]{workspace.Path}[/]";
 
                 var tree = new Tree(new Markup(treeLabel));
-                AddTreeNodes(workspace, tree, true);
+                AddTreeNodes(workspace, tree,  workspace.ContainRepositories ? ChildrenRenderingMode.JustRepositories : ChildrenRenderingMode.AllIfNoRepositories);
                 return tree;
             }
         }
 
-        public void AddTreeNodes(WorkspaceNode workspace, IHasTreeNodes parentNode, bool renderChildren)
+        public void AddTreeNodes(WorkspaceNode workspace, IHasTreeNodes parentNode, ChildrenRenderingMode childrenRenderingMode)
         {
+            if (childrenRenderingMode is ChildrenRenderingMode.None)
+            {
+                return;
+            }
+
             foreach (var workspaceNode in workspace.Nodes)
             {
-                renderChildren =
-                    workspaceNode.IsRepository ? false :
-                    workspaceNode.ContainRepositories ? true :
-                    false;
+                if (childrenRenderingMode is ChildrenRenderingMode.JustRepositories && !workspaceNode.IsRepository && !workspaceNode.ContainRepositories)
+                {
+                    continue;
+                }
+
+                var nextMode =
+                    childrenRenderingMode is ChildrenRenderingMode.AllIfNoRepositories ? ChildrenRenderingMode.None :
+                    workspaceNode.IsRepository ? ChildrenRenderingMode.None :
+                    workspaceNode.ContainRepositories ? ChildrenRenderingMode.JustRepositories :
+                    ChildrenRenderingMode.None;
 
                 var color = workspaceNode.IsRepository ? ColorScheme.Default.RepositoryNode : ColorScheme.Default.NonRepositoryNode;
                 var branchIndicator = workspaceNode.IsRepository ? $"[{ColorScheme.Default.RepositoryBranch}] ({workspaceNode.Repository.Head.FriendlyName})[/]" : string.Empty;
@@ -79,12 +98,10 @@ namespace Repoverse.Rendering
 
                 var treeNode = new TreeNode(new Markup($"{isActiveIndicator}{operationResultIndicator}[{color}]{workspaceNode.Name}[/]{branchIndicator}{status}"));
 
+
                 parentNode.AddNode(treeNode);
 
-                if (renderChildren)
-                {
-                    AddTreeNodes(workspaceNode, treeNode, renderChildren);
-                }
+                AddTreeNodes(workspaceNode, treeNode, nextMode);
             }
         }
 

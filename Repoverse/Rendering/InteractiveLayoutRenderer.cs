@@ -72,7 +72,10 @@ public class InteractiveLayoutRenderer
         this.running = true;
         this.liveTask = Task.Run(() =>
         {
-            AnsiConsole.Live(this.mainLayoutHider).Start(context =>
+            AnsiConsole
+            .Live(this.mainLayoutHider)
+            .Overflow(VerticalOverflow.Visible)
+            .Start(context =>
             {
                 while (this.running)
                 {
