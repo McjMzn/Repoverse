@@ -74,6 +74,11 @@ namespace Repoverse.Rendering
 
             foreach (var workspaceNode in workspace.Nodes)
             {
+                if (!Directory.Exists(workspaceNode.Path))
+                {
+                    continue;
+                }
+
                 if (childrenRenderingMode is ChildrenRenderingMode.JustRepositories && !workspaceNode.IsRepository && !workspaceNode.ContainRepositories)
                 {
                     continue;
