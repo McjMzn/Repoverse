@@ -20,8 +20,6 @@ namespace Repoverse
             this.osShell = new WindowsCmd(repoverse.WorkingDirectory);
         }
 
-        public event EventHandler<ProcessResult> ProcessResultProvided;
-
         public override void ExecuteCommand(string command)
         {
             if (string.IsNullOrWhiteSpace(command))

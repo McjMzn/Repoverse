@@ -60,7 +60,13 @@ namespace Repoverse.Rendering
                 var treeLabel = workspace.IsSubdirectoryOfRepository ? builder.ToString() : $"[{ColorScheme.Default.RootNode}]{workspace.Path}[/]";
 
                 var tree = new Tree(new Markup(treeLabel));
-                AddTreeNodes(workspace, tree,  workspace.ContainRepositories ? ChildrenRenderingMode.JustRepositories : ChildrenRenderingMode.AllIfNoRepositories);
+
+                var mode =
+                    workspace.ContainRepositories && workspace.Nodes.Count < 15 ? ChildrenRenderingMode.All :
+                    workspace.ContainRepositories ? ChildrenRenderingMode.AllIfNoRepositories :
+                    ChildrenRenderingMode.JustRepositories;
+
+                AddTreeNodes(workspace, tree,  mode);
                 return tree;
             }
         }

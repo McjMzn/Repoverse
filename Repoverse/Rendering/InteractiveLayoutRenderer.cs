@@ -132,12 +132,12 @@ public class InteractiveLayoutRenderer
 
         if (!string.IsNullOrWhiteSpace(result.ProcessStandardOutput))
         {
-            builder.AppendLine(result.ProcessStandardOutput);
+            builder.AppendLine(result.ProcessStandardOutput.Replace("[", "[[").Replace("]", "]]"));
         }
 
         if (!string.IsNullOrWhiteSpace(result.ProcessStandardError))
         {
-            builder.AppendLine($"[red]{result.ProcessStandardError}[/]");
+            builder.AppendLine($"[red]{result.ProcessStandardError.Replace("[", "[[").Replace("]", "]]")}[/]");
         }
 
         var panel = new Panel(new Markup(builder.ToString())).Expand();
