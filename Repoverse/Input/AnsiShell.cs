@@ -24,6 +24,11 @@ namespace Repoverse.Input
             switch(key.Key)
             {
                 case ConsoleKey.UpArrow:
+                    if (this.CommandHistory.Count == 0)
+                    {
+                        break;
+                    }
+
                     this.historyIndex =
                             this.historyIndex == -1 ? this.CommandHistory.Count - 1 :
                             this.historyIndex > 0 ? this.historyIndex - 1 :
@@ -34,6 +39,11 @@ namespace Repoverse.Input
                     break;
 
                 case ConsoleKey.DownArrow:
+                    if (this.CommandHistory.Count == 0)
+                    {
+                        break;
+                    }
+
                     if (this.historyIndex == this.CommandHistory.Count - 1)
                     {
                         this.historyIndex = -1;
