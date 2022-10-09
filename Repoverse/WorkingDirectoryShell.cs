@@ -17,7 +17,7 @@ namespace Repoverse
         public WorkingDirectoryShell(Repoverse repoverse)
         {
             this.repoverse = repoverse;
-            this.osShell = new WindowsCmd(repoverse.WorkingDirectory);
+            this.osShell = new OperatingSystemShell(repoverse.WorkingDirectory, OperatingSystemShellSettings.Cmd);
         }
 
         public override void ExecuteCommand(string command)
