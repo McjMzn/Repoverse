@@ -15,10 +15,18 @@ public class OperatingSystemShellSettings
         ExitCodeVariableName = "%errorlevel%"
     };
     
-    public static OperatingSystemShellSettings Ubuntu { get; } = new()
+    public static OperatingSystemShellSettings WslUbuntu2204 { get; } = new()
     {
         ShellExecutablePath = "ubuntu2204",
         ShellExecutableArguments = "run",
+        CommandsSequenceOperator = ";",
+        ExitCodeVariableName = "$?"
+    };
+
+    public static OperatingSystemShellSettings Bash { get; } = new()
+    {
+        ShellExecutablePath = "/bin/bash",
+        ShellExecutableArguments = string.Empty,
         CommandsSequenceOperator = ";",
         ExitCodeVariableName = "$?"
     };
